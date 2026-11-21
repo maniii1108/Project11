@@ -1,0 +1,39 @@
+name: Terraform Plan CI
+ 
+on:
+  push:
+    branches:
+      - main
+      - 'feature/**'
+  pull_request:
+    branches:
+      - main
+ 
+jobs:
+  terraform-plan:
+    name: Terraform Plan & Upload Artifact
+    runs-on: ubuntu-latest
+ 
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+ 
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.9.8
+ 
+      - name: Terraform Init
+        run: terraform init
+ 
+      - name: Terraform Validate
+        run: terraform validate
+ 
+      - name: Terraform Plan
+        run: terraform plan -out=tfplan
+ 
+      - name: Upload Terraform Plan Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: terraform-plan-artifact
+          path: tfplan
