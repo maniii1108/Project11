@@ -1,17 +1,16 @@
-name: Terraform Plan CI
+name: GitOps Terraform CI/CD
  
 on:
   push:
     branches:
       - main
-      - 'feature/**'
   pull_request:
     branches:
       - main
  
 jobs:
   terraform-plan:
-    name: Terraform Plan & Upload Artifact
+    name: Terraform Plan
     runs-on: ubuntu-latest
  
     steps:
@@ -26,9 +25,6 @@ jobs:
       - name: Terraform Init
         run: terraform init
  
-      - name: Terraform Validate
-        run: terraform validate
- 
       - name: Terraform Plan
         run: terraform plan -out=tfplan
  
@@ -37,3 +33,30 @@ jobs:
         with:
           name: terraform-plan-artifact
           path: tfplan
+ 
+  terraform-apply:
+    name: Terraform Apply (Production)
+    needs: terraform-plan
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    environment: production
+ 
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+ 
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.9.8
+ 
+      - name: Download Terraform Plan Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: terraform-plan-artifact
+ 
+      - name: Terraform Init
+        run: terraform init
+ 
+      - name: Terraform Apply
+        run: terraform apply -auto-approve tfplan
